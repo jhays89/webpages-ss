@@ -1,0 +1,32 @@
+{
+  "name": "webpages-ss",
+  "version": "1.0.0",
+  "description": "Website screen shot project",
+  "main": "bin/index.js",
+  "bin": {
+    "webpages-ss": "./bin/index.js"
+  },
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jhays89/webpages-ss.git"
+  },
+  "keywords": [
+    "website",
+    "screen",
+    "shot"
+  ],
+  "author": "SomaComa89",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jhays89/webpages-ss/issues"
+  },
+  "homepage": "https://github.com/jhays89/webpages-ss#readme",
+  "dependencies": {
+    "node-xlsx": "^0.15.0",
+    "puppeteer": "^5.2.1",
+    "yargs": "^15.4.1"
+  }
+}
