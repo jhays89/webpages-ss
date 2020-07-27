@@ -26,6 +26,7 @@
   "homepage": "https://github.com/jhays89/webpages-ss#readme",
   "dependencies": {
     "node-xlsx": "^0.15.0",
+    "pkgcloud": "^2.2.0",
     "puppeteer": "^5.2.1",
     "yargs": "^15.4.1"
   }
