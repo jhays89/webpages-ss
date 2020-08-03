@@ -12,7 +12,9 @@ function main(args) {
   let nameRow = rows[0];
   const urlIndex = getUrlIndex(nameRow);
   const ssUrlIndex = getSsUrlIndex(nameRow, file);
-
+// TODO maybe add some console.logs()
+// Test on terminal
+// relook at reqs
   
   try {
     generateScreenShots(file, rows, urlIndex, ssUrlIndex);
