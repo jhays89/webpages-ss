@@ -39,6 +39,7 @@ async function generateScreenShot(client, row, rowIndex, file, urlIndex, ssUrlIn
   .then(response => {
     row[ssUrlIndex] = response;
     file[0].data[rowIndex] = row;
+    console.log('Saved to Rackspace');
   })
   .catch(err => {
     throw err;
@@ -61,6 +62,7 @@ async function getScreenShotUrl(client, url) {
   }
 
   return new Promise((resolve, reject) => {
+    console.log('Saving to Rackspace...');
     const readStream = fs.createReadStream('screenshot.jpeg');
 
     const writeStream = client.upload(uploadOptions);
@@ -83,10 +85,34 @@ async function getScreenShotUrl(client, url) {
 }
 
 async function createScreenShot(url) {
+  console.log('Capturing screen shot for: ' + url);
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
-  await page.goto(url);
-  await page.screenshot({fullPage: true, path: 'screenshot.jpeg', type: 'jpeg', quality: 20});
+
+  await page.setViewport({
+    width: 375,
+    height: 812,
+    deviceScaleFactor: 1,
+  });
+  
+  await page.goto(url, {waitUntil: 'networkidle0'});
+
+  await page.evaluate(async () => {
+    document.body.scrollIntoView(false);
+  
+    await Promise.all(Array.from(document.getElementsByTagName('img'), image => {
+      if (image.complete) {
+        return;
+      }
+  
+      return new Promise((resolve, reject) => {
+        image.addEventListener('load', resolve);
+        image.addEventListener('error', reject);
+      });
+    }));
+  });
+
+  await page.screenshot({fullPage: true, path: 'screenshot.jpeg', type: 'jpeg', quality: 50});
 
   await browser.close();
 };
@@ -126,9 +152,11 @@ function createSsUrlColumn(file) {
 }
 
 function writeToFile(file) {
+  console.log('Writing to CSV...');
   const buffer = XLSX.build([{name: 'Webpages-ss', data: file[0].data}]);
 
   fs.writeFileSync('sample.xlsx', buffer);
+  console.log('Process complete.');
 }
 
 module.exports = main;
