@@ -4,15 +4,21 @@ const XLSX = require('node-xlsx');
 const puppeteer = require('puppeteer');
 const pkgcloud = require('pkgcloud');
 const appSettings = require('../appsettings.js');
+const store = require('./store.js');
 
 function main(args) {
+  store.setArgs(args);
+
+  run();
+}
+
+function run() {
   let file = XLSX.parse('sample.xlsx');
   let rows = file[0].data;
 
   let nameRow = rows[0];
   const urlIndex = getUrlIndex(nameRow);
   const ssUrlIndex = getSsUrlIndex(nameRow, file);
-
   
   try {
     generateScreenShots(file, rows, urlIndex, ssUrlIndex);
@@ -20,7 +26,7 @@ function main(args) {
   catch(err) {
     console.log(err);
   }
-};
+}
 
 async function generateScreenShots(file, rows, urlIndex, ssUrlIndex) {
   const client = pkgcloud.storage.createClient(appSettings.rackspace);
@@ -37,6 +43,7 @@ async function generateScreenShot(client, row, rowIndex, file, urlIndex, ssUrlIn
   .then(response => {
     row[ssUrlIndex] = response;
     file[0].data[rowIndex] = row;
+    console.log('Saved to Rackspace');
   })
   .catch(err => {
     throw err;
@@ -59,6 +66,7 @@ async function getScreenShotUrl(client, url) {
   }
 
   return new Promise((resolve, reject) => {
+    console.log('Saving to Rackspace...');
     const readStream = fs.createReadStream('screenshot.jpeg');
 
     const writeStream = client.upload(uploadOptions);
@@ -81,10 +89,35 @@ async function getScreenShotUrl(client, url) {
 }
 
 async function createScreenShot(url) {
+  console.log('Capturing screen shot for: ' + url);
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
-  await page.goto(url);
-  await page.screenshot({fullPage: true, path: 'screenshot.jpeg', type: 'jpeg', quality: 20});
+
+  await page.setViewport({
+    width: store.data.selectedDisplayType.width,
+    height: store.data.selectedDisplayType.height,
+    deviceScaleFactor: 1,
+  });
+  
+  await page.goto(url, {waitUntil: 'networkidle0'});
+
+  // Uncomment when you want to get full page shot
+  // await page.evaluate(async () => {
+  //   document.body.scrollIntoView(false);
+  
+  //   await Promise.all(Array.from(document.getElementsByTagName('img'), image => {
+  //     if (image.complete) {
+  //       return;
+  //     }
+  
+  //     return new Promise((resolve, reject) => {
+  //       image.addEventListener('load', resolve);
+  //       image.addEventListener('error', reject);
+  //     });
+  //   }));
+  // });
+
+  await page.screenshot({path: 'screenshot.jpeg', type: 'jpeg', quality: 50});
 
   await browser.close();
 };
@@ -124,9 +157,11 @@ function createSsUrlColumn(file) {
 }
 
 function writeToFile(file) {
+  console.log('Writing to CSV...');
   const buffer = XLSX.build([{name: 'Webpages-ss', data: file[0].data}]);
 
   fs.writeFileSync('sample.xlsx', buffer);
+  console.log('Process complete.');
 }
 
 module.exports = main;
