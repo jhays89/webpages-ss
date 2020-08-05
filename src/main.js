@@ -3,6 +3,7 @@ const fs = require('fs');
 const XLSX = require('node-xlsx');
 const puppeteer = require('puppeteer');
 const pkgcloud = require('pkgcloud');
+const Jimp = require('jimp');
 const appSettings = require('../appsettings.js');
 const store = require('./store.js');
 
@@ -65,6 +66,8 @@ async function getScreenShotUrl(client, url) {
     throw err;
   }
 
+  await overlayImages();
+
   return new Promise((resolve, reject) => {
     console.log('Saving to Rackspace...');
     const readStream = fs.createReadStream('screenshot.jpeg');
@@ -117,10 +120,24 @@ async function createScreenShot(url) {
   //   }));
   // });
 
-  await page.screenshot({path: 'screenshot.jpeg', type: 'jpeg', quality: 50});
+  await page.screenshot({path: 'screenshot.jpeg', type: 'jpeg', quality: 100});
 
   await browser.close();
 };
+
+async function overlayImages() {
+  let overlay = await Jimp.read('overlay.png');
+  const image = await Jimp.read('screenshot.jpeg');
+
+  image.quality(50);
+  image.composite(overlay, 20, 20, {
+    mode: Jimp.BLEND_SOURCE_OVER,
+    opacityDest: 1,
+    opacitySource: 0.8
+  });
+
+  await image.writeAsync('screenshot.jpeg');
+}
 
 function getUrlIndex(nameRow) {
   let urlIndex = null;
