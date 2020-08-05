@@ -4,17 +4,21 @@ const XLSX = require('node-xlsx');
 const puppeteer = require('puppeteer');
 const pkgcloud = require('pkgcloud');
 const appSettings = require('../appsettings.js');
+const store = require('./store.js');
 
 function main(args) {
+  store.setArgs(args);
+
+  run();
+}
+
+function run() {
   let file = XLSX.parse('sample.xlsx');
   let rows = file[0].data;
 
   let nameRow = rows[0];
   const urlIndex = getUrlIndex(nameRow);
   const ssUrlIndex = getSsUrlIndex(nameRow, file);
-// TODO maybe add some console.logs()
-// Test on terminal
-// relook at reqs
   
   try {
     generateScreenShots(file, rows, urlIndex, ssUrlIndex);
@@ -22,7 +26,7 @@ function main(args) {
   catch(err) {
     console.log(err);
   }
-};
+}
 
 async function generateScreenShots(file, rows, urlIndex, ssUrlIndex) {
   const client = pkgcloud.storage.createClient(appSettings.rackspace);
@@ -90,29 +94,30 @@ async function createScreenShot(url) {
   const page = await browser.newPage();
 
   await page.setViewport({
-    width: 375,
-    height: 812,
+    width: store.data.selectedDisplayType.width,
+    height: store.data.selectedDisplayType.height,
     deviceScaleFactor: 1,
   });
   
   await page.goto(url, {waitUntil: 'networkidle0'});
 
-  await page.evaluate(async () => {
-    document.body.scrollIntoView(false);
+  // Uncomment when you want to get full page shot
+  // await page.evaluate(async () => {
+  //   document.body.scrollIntoView(false);
   
-    await Promise.all(Array.from(document.getElementsByTagName('img'), image => {
-      if (image.complete) {
-        return;
-      }
+  //   await Promise.all(Array.from(document.getElementsByTagName('img'), image => {
+  //     if (image.complete) {
+  //       return;
+  //     }
   
-      return new Promise((resolve, reject) => {
-        image.addEventListener('load', resolve);
-        image.addEventListener('error', reject);
-      });
-    }));
-  });
+  //     return new Promise((resolve, reject) => {
+  //       image.addEventListener('load', resolve);
+  //       image.addEventListener('error', reject);
+  //     });
+  //   }));
+  // });
 
-  await page.screenshot({fullPage: true, path: 'screenshot.jpeg', type: 'jpeg', quality: 50});
+  await page.screenshot({path: 'screenshot.jpeg', type: 'jpeg', quality: 50});
 
   await browser.close();
 };
