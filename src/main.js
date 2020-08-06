@@ -70,23 +70,22 @@ async function getScreenShotUrl(client, url) {
 
   return new Promise((resolve, reject) => {
     console.log('Saving to Rackspace...');
-    const readStream = fs.createReadStream('screenshot.jpeg');
+    const readStream = fs.createReadStream('src/assets/screenshot.jpeg');
 
     const writeStream = client.upload(uploadOptions);
     
     writeStream.on('error', err =>  {
       readStream.unpipe();
       writeStream.unpipe();
-      
-      throw err;
     });
-    
-  readStream.pipe(writeStream).on('success', response => {
-      screenShotUrl += response.name;
-      resolve(screenShotUrl);
 
+    readStream.pipe(writeStream).on('success', response => {
+      screenShotUrl += response.name;
+      
       readStream.unpipe();
       writeStream.unpipe();
+
+      resolve(screenShotUrl);
     });
   });
 }
@@ -120,23 +119,33 @@ async function createScreenShot(url) {
   //   }));
   // });
 
-  await page.screenshot({path: 'screenshot.jpeg', type: 'jpeg', quality: 100});
+  await page.screenshot({path: 'src/assets/screenshot.jpeg', type: 'jpeg', quality: 100});
 
   await browser.close();
 };
 
 async function overlayImages() {
-  let overlay = await Jimp.read('overlay.png');
-  const image = await Jimp.read('screenshot.jpeg');
+  let overlayHeight = 0;
+  let overlayPath = store.data.selectedDisplayType.type.toUpperCase() === 'MOBILE' ? 'src/assets/mobile-overlay.png' : 'src/assets/desktop-overlay.png';
+  let overlay = await Jimp.read(overlayPath).then(function(image) {
+    overlayHeight = image.bitmap.height;
+    
+    return image;
+  });
 
-  image.quality(50);
-  image.composite(overlay, 20, 20, {
+  const image = await Jimp.read('src/assets/screenshot.jpeg');
+
+  let overlayYCoordinate = store.data.selectedDisplayType.height - overlayHeight;
+  
+  image.quality(80);
+  image.composite(overlay, 0, overlayYCoordinate, {
     mode: Jimp.BLEND_SOURCE_OVER,
     opacityDest: 1,
     opacitySource: 0.8
   });
 
-  await image.writeAsync('screenshot.jpeg');
+  await image.writeAsync('src/assets/screenshot.jpeg');
+  debugger;
 }
 
 function getUrlIndex(nameRow) {

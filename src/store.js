@@ -7,12 +7,14 @@ const store = {
       mobile: {
         width: 375,
         height: 812,
-        description: 'iPhone X'
+        description: 'iPhone X',
+        type: 'mobile'
       },
       desktop: {
         width: 1366,
         height: 768,
-        description: 'Common Desktop'
+        description: 'Common Desktop',
+        type: 'desktop'
       }
     },
     selectedDisplayType: {}
